@@ -256,7 +256,7 @@ function readXlsx(file) {
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header:1 });
         const vals = rows
-          .slice(1)                          // skip header row
+          .slice(4)                          // skip header row
           .map(r => r[1])                    // Column B (index 1)
           .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
           .map(v => String(v).trim());

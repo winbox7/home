@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WinBox7 – Quiz Lucky Draw</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   ROOT TOKENS
+═══════════════════════════════════════════ */
+:root{
+  --bg:       #04040C;
+  --bg2:      #07071A;
+  --gold:     #FFD700;
+  --gold2:    #FFA500;
+  --gold3:    #B8860B;
+  --pink:     #FF2D9B;
+  --cyan:     #00F5FF;
+  --purple:   #8B2FC9;
+  --white:    #FFFFFF;
+  --off:      rgba(255,255,255,0.55);
+  --card:     rgba(255,255,255,0.035);
+  --border:   rgba(255,215,0,0.18);
+  --gGold:    linear-gradient(135deg,#FFD700,#FF8C00);
+  --gPink:    linear-gradient(135deg,#FF2D9B,#8B2FC9);
+  --gCyan:    linear-gradient(135deg,#00F5FF,#0080FF);
+  --glowGold: 0 0 22px rgba(255,215,0,.5),0 0 55px rgba(255,215,0,.18);
+  --glowPink: 0 0 22px rgba(255,45,155,.5),0 0 55px rgba(255,45,155,.18);
+  --glowCyan: 0 0 22px rgba(0,245,255,.5),0 0 55px rgba(0,245,255,.18);
+  --ff1:'Cinzel Decorative',serif;
+  --ff2:'Exo 2',sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--ff2);
+  background:var(--bg);
+  color:var(--white);
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── Custom cursor ── */
+#cursor,#cursor-ring{
+  position:fixed;border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:opacity .3s;
+}
+#cursor{
+  width:8px;height:8px;
+  background:var(--gold);
+  box-shadow:var(--glowGold);
+}
+#cursor-ring{
+  width:34px;height:34px;
+  border:1.5px solid rgba(255,215,0,.45);
+  transition:transform .12s ease,width .2s,height .2s,border-color .2s;
+}
+body:hover #cursor{opacity:1}
+
+/* ── Particle canvas ── */
+#particle-canvas{
+  position:fixed;inset:0;
+  pointer-events:none;z-index:0;opacity:.7;
+}
+
+/* ── Section base ── */
+section{position:relative;z-index:1}
+
+/* ── Scroll reveal ── */
+.reveal{
+  opacity:0;transform:translateY(38px);
+  transition:opacity .75s ease,transform .75s ease;
+}
+.reveal.visible{opacity:1;transform:none}
+
+/* ══════════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:66px;
+  background:rgba(4,4,12,.88);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(18px);
+}
+.nav-logo{
+  font-family:var(--ff1);font-size:17px;
+  font-weight:900;letter-spacing:2px;
+  color:var(--white);
+}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:28px}
+.nav-links a{
+  font-size:12px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--off);text-decoration:none;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{
+  background:var(--gGold);border:none;border-radius:8px;
+  padding:9px 20px;font-family:var(--ff2);font-weight:700;
+  font-size:12px;letter-spacing:1.5px;color:#000;
+  cursor:none;transition:transform .2s,box-shadow .2s;
+  text-transform:uppercase;
+}
+.nav-cta:hover{transform:scale(1.06);box-shadow:var(--glowGold)}
+@media(max-width:680px){
+  .nav-links{display:none}
+  nav{padding:0 20px}
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+#hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:80px 20px 60px;
+  position:relative;overflow:hidden;
+}
+
+/* Radial ambient glow */
+#hero::before{
+  content:'';position:absolute;
+  width:900px;height:900px;
+  background:radial-gradient(circle,rgba(255,215,0,.08) 0%,transparent 68%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;
+  animation:heroGlow 6s ease-in-out infinite;
+}
+@keyframes heroGlow{
+  0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}
+}
+
+/* Rotating ring */
+.hero-ring{
+  position:absolute;
+  border-radius:50%;pointer-events:none;
+}
+.hero-ring-1{
+  width:620px;height:620px;
+  border:1px solid rgba(255,215,0,.08);
+  animation:spin 22s linear infinite;
+}
+.hero-ring-2{
+  width:820px;height:820px;
+  border:1px dashed rgba(0,245,255,.07);
+  animation:spin 35s linear infinite reverse;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,215,0,.08);
+  border:1px solid rgba(255,215,0,.28);
+  border-radius:50px;padding:6px 18px;
+  font-size:11px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--gold);
+  margin-bottom:26px;
+  animation:fadeUp .9s ease .2s both;
+}
+.hero-badge::before{
+  content:'';width:7px;height:7px;
+  background:var(--gold);border-radius:50%;
+  box-shadow:var(--glowGold);
+  animation:blink 1.4s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero-title{
+  font-family:var(--ff1);
+  font-size:clamp(32px,7vw,82px);
+  font-weight:900;line-height:1.06;
+  letter-spacing:-1px;
+  animation:fadeUp .9s ease .35s both;
+}
+.hero-title .t-white{color:var(--white)}
+.hero-title .t-gold{
+  color:var(--gold);
+  text-shadow:0 0 30px rgba(255,215,0,.55),0 0 60px rgba(255,215,0,.22);
+}
+.hero-title .t-shine{
+  background:var(--gGold);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(255,215,0,.45));
+}
+
+.hero-sub{
+  font-size:clamp(14px,2vw,18px);
+  color:var(--off);max-width:620px;line-height:1.7;
+  margin:22px auto 0;
+  animation:fadeUp .9s ease .5s both;
+}
+
+.hero-platforms{
+  display:flex;align-items:center;gap:16px;
+  margin-top:36px;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp .9s ease .65s both;
+}
+.plat-chip{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:50px;padding:8px 18px;
+  font-size:12px;font-weight:600;letter-spacing:.5px;
+  transition:transform .2s,box-shadow .2s;
+}
+.plat-chip:hover{transform:translateY(-3px)}
+.plat-chip .dot{width:9px;height:9px;border-radius:50%}
+.yt  .dot{background:#FF0000;box-shadow:0 0 8px #FF0000}
+.fb  .dot{background:#1877F2;box-shadow:0 0 8px #1877F2}
+.ig  .dot{background:#E1306C;box-shadow:0 0 8px #E1306C}
+
+.hero-scroll{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10px;letter-spacing:2px;color:var(--off);
+  animation:fadeUp .9s ease .9s both;
+}
+.scroll-bar{
+  width:1.5px;height:40px;
+  background:linear-gradient(to bottom,rgba(255,215,0,.6),transparent);
+  animation:scrollPulse 1.8s ease-in-out infinite;
+}
+@keyframes scrollPulse{0%,100%{opacity:.4;transform:scaleY(.6)}50%{opacity:1;transform:scaleY(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════════════════════════
+   SCHEDULE STRIP
+══════════════════════════════════════════ */
+#schedule{
+  padding:80px 20px;
+  background:linear-gradient(to bottom,var(--bg),var(--bg2));
+}
+.sec-eyebrow{
+  text-align:center;
+  font-size:10px;letter-spacing:3.5px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.sec-eyebrow::before,.sec-eyebrow::after{
+  content:'';flex:1;max-width:80px;height:1px;
+  background:linear-gradient(to right,transparent,var(--gold3));
+}
+.sec-eyebrow::after{background:linear-gradient(to left,transparent,var(--gold3))}
+
+.sec-title{
+  font-family:var(--ff1);text-align:center;
+  font-size:clamp(22px,4vw,42px);font-weight:700;
+  margin-bottom:14px;
+}
+.sec-desc{
+  text-align:center;color:var(--off);
+  max-width:600px;margin:0 auto 56px;
+  font-size:15px;line-height:1.7;
+}
+
+/* Timeline row */
+.week-track{
+  display:flex;align-items:flex-start;
+  justify-content:center;gap:0;
+  max-width:1100px;margin:0 auto;
+  flex-wrap:wrap;
+}
+
+.day-node{
+  display:flex;flex-direction:column;align-items:center;
+  flex:1;min-width:120px;max-width:160px;
+  position:relative;
+}
+/* Connector line between nodes */
+.day-node:not(:last-child)::after{
+  content:'';
+  position:absolute;top:28px;left:calc(50% + 28px);right:0;
+  height:2px;
+  background:linear-gradient(to right,rgba(255,215,0,.4),rgba(255,215,0,.1));
+  z-index:0;
+}
+
+.day-icon{
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;
+  font-family:var(--ff1);
+  position:relative;z-index:1;
+  border:2px solid rgba(255,215,0,.25);
+  background:rgba(255,215,0,.07);
+  transition:transform .3s,box-shadow .3s;
+  cursor:default;
+}
+.day-node:hover .day-icon{
+  transform:scale(1.18) translateY(-5px);
+  box-shadow:var(--glowGold);
+  border-color:var(--gold);
+}
+.day-node.is-sunday .day-icon{
+  background:rgba(255,45,155,.12);
+  border-color:rgba(255,45,155,.35);
+}
+.day-node.is-sunday:hover .day-icon{
+  box-shadow:var(--glowPink);
+  border-color:var(--pink);
+}
+
+.day-label{
+  font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--off);
+  margin-top:10px;font-weight:600;
+}
+.day-time{
+  font-size:13px;font-weight:700;
+  color:var(--gold);margin-top:5px;
+}
+.day-tag{
+  margin-top:7px;font-size:10px;
+  padding:3px 10px;border-radius:50px;
+  letter-spacing:.5px;font-weight:600;
+}
+.tag-quiz{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.25)}
+.tag-win{background:rgba(255,45,155,.12);color:var(--pink);border:1px solid rgba(255,45,155,.25)}
+
+/* Animated pulse dot on quiz days */
+.day-pulse{
+  position:absolute;top:-4px;right:-4px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--gold);
+  animation:pulseDot 1.8s ease-in-out infinite;
+}
+@keyframes pulseDot{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.6)}
+  50%{box-shadow:0 0 0 8px rgba(255,215,0,0)}
+}
+.is-sunday .day-pulse{background:var(--pink);animation:pulseDotPink 1.8s ease-in-out infinite}
+@keyframes pulseDotPink{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,45,155,.6)}
+  50%{box-shadow:0 0 0 8px rgba(255,45,155,0)}
+}
+
+/* ══════════════════════════════════════════
+   HOW IT WORKS — intro band
+══════════════════════════════════════════ */
+#how{padding:90px 20px;background:var(--bg2)}
+.how-intro-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:24px;max-width:1000px;margin:0 auto 70px;
+}
+@media(max-width:680px){.how-intro-grid{grid-template-columns:1fr}}
+
+.info-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;padding:30px 26px;
+  position:relative;overflow:hidden;
+  transition:transform .3s,box-shadow .3s;
+}
+.info-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.info-card::before{
+  content:'';position:absolute;
+  inset:0;border-radius:18px;
+  background:radial-gradient(circle at 30% 0%,rgba(255,215,0,.06),transparent 60%);
+  pointer-events:none;
+}
+.ic-icon{font-size:34px;margin-bottom:14px;display:block}
+.ic-title{
+  font-family:var(--ff1);font-size:14px;font-weight:700;
+  color:var(--gold);letter-spacing:1px;margin-bottom:10px;
+}
+.ic-body{font-size:13px;color:var(--off);line-height:1.75}
+
+/* ══════════════════════════════════════════
+   DRAW 1 — LOYALTY
+══════════════════════════════════════════ */
+#loyalty{
+  padding:90px 20px;
+  background:linear-gradient(160deg,var(--bg) 0%,rgba(139,47,201,.07) 50%,var(--bg) 100%);
+}
+
+.draw-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:60px;align-items:center;max-width:1100px;margin:0 auto;
+}
+@media(max-width:800px){.draw-layout{grid-template-columns:1fr;gap:40px}}
+.draw-layout.flip{direction:rtl}
+.draw-layout.flip > *{direction:ltr}
+
+.draw-visual{display:flex;justify-content:center;align-items:center}
+
+/* Loyalty visual — 6 winner cards stack */
+.loyalty-stack{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;width:100%;max-width:380px;
+}
+.lw-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;padding:16px 12px;
+  text-align:center;
+  transition:transform .3s,box-shadow .3s;
+  animation:floatCard 4s ease-in-out infinite;
+}
+.lw-card:nth-child(2){animation-delay:.5s}
+.lw-card:nth-child(3){animation-delay:1s}
+.lw-card:nth-child(4){animation-delay:1.5s}
+.lw-card:nth-child(5){animation-delay:2s}
+.lw-card:nth-child(6){animation-delay:2.5s}
+@keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.lw-card:hover{transform:translateY(-10px) scale(1.06);box-shadow:var(--glowGold)}
+
+.lw-day{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--off);margin-bottom:5px}
+.lw-crown{font-size:24px}
+.lw-name{
+  font-size:9.5px;font-weight:700;
+  color:var(--gold);margin-top:5px;
+  font-family:var(--ff1);letter-spacing:.5px;
+}
+
+.draw-copy{}
+.draw-num{
+  font-family:var(--ff1);font-size:54px;font-weight:900;
+  line-height:1;
+  background:var(--gGold);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:4px;
+}
+.draw-subtitle{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--purple);margin-bottom:16px;font-weight:600;
+}
+.draw-heading{
+  font-family:var(--ff1);font-size:clamp(20px,3.5vw,34px);
+  font-weight:700;line-height:1.2;margin-bottom:22px;
+}
+
+.rule-list{list-style:none;margin-bottom:28px;display:flex;flex-direction:column;gap:14px}
+.rule-list li{
+  display:flex;gap:14px;align-items:flex-start;
+  font-size:14px;color:var(--off);line-height:1.65;
+}
+.rule-icon{
+  width:32px;height:32px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);
+  margin-top:1px;
+}
+.rule-list li strong{color:var(--white)}
+
+.prize-banner{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,215,0,.07);
+  border:1px solid rgba(255,215,0,.25);
+  border-radius:50px;padding:10px 22px;
+  font-size:14px;font-weight:700;color:var(--gold);
+}
+.prize-banner span{font-size:20px}
+
+/* ══════════════════════════════════════════
+   DIVIDER — animated banner
+══════════════════════════════════════════ */
+.divider-band{
+  overflow:hidden;padding:22px 0;
+  background:linear-gradient(90deg,rgba(255,45,155,.07),rgba(139,47,201,.12),rgba(255,45,155,.07));
+  border-top:1px solid rgba(255,45,155,.15);
+  border-bottom:1px solid rgba(255,45,155,.15);
+  position:relative;z-index:1;
+}
+.ticker-inner{
+  display:flex;gap:60px;width:max-content;
+  animation:ticker 18s linear infinite;
+  white-space:nowrap;
+}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  font-family:var(--ff1);font-size:13px;font-weight:700;
+  letter-spacing:2px;color:var(--pink);display:flex;align-items:center;gap:16px;
+}
+.ticker-item::after{content:'✦';color:var(--gold);font-size:10px}
+
+/* ══════════════════════════════════════════
+   DRAW 2 — GRAND LUCKY DRAW
+══════════════════════════════════════════ */
+#grand{
+  padding:90px 20px;
+  background:linear-gradient(160deg,var(--bg) 0%,rgba(0,245,255,.04) 50%,var(--bg) 100%);
+}
+
+/* Grand visual — funnel */
+.grand-visual{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:400px;margin:0 auto}
+
+.funnel-block{
+  width:100%;border-radius:14px;
+  padding:18px 22px;text-align:center;
+  position:relative;
+  transition:transform .3s;
+}
+.funnel-block:hover{transform:scale(1.03)}
+
+.fb-all{
+  background:rgba(0,245,255,.06);
+  border:1px solid rgba(0,245,255,.2);
+  margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;
+}
+.fb-semi{
+  background:rgba(139,47,201,.1);
+  border:1px solid rgba(139,47,201,.3);
+  border-radius:0;
+  width:84%;align-self:center;
+}
+.fb-final{
+  background:rgba(255,215,0,.07);
+  border:1px solid rgba(255,215,0,.28);
+  border-top-left-radius:0;border-top-right-radius:0;
+  width:64%;align-self:center;
+}
+.funnel-arrow{
+  align-self:center;
+  font-size:20px;color:var(--off);
+  animation:arrowBounce 1.4s ease-in-out infinite;
+  z-index:2;position:relative;
+  margin:-2px 0;
+}
+@keyframes arrowBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+.fb-icon{font-size:26px;margin-bottom:6px}
+.fb-label{
+  font-family:var(--ff1);font-size:11px;font-weight:700;
+  letter-spacing:1px;margin-bottom:4px;
+}
+.fb-all    .fb-label{color:var(--cyan)}
+.fb-semi   .fb-label{color:var(--purple-lt, #C084FC)}
+.fb-final  .fb-label{color:var(--gold)}
+.fb-desc{font-size:12px;color:var(--off);line-height:1.5}
+
+/* Round steps */
+.round-steps{display:flex;flex-direction:column;gap:24px;margin-top:10px}
+.round-step{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;padding:22px 24px;
+  position:relative;overflow:hidden;
+  transition:transform .3s,box-shadow .3s;
+}
+.round-step:hover{transform:translateX(8px);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.rs-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.rs-num{
+  width:42px;height:42px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff1);font-size:18px;font-weight:900;
+  flex-shrink:0;
+}
+.rs-num.gold{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.28)}
+.rs-num.pink{background:rgba(255,45,155,.12);color:var(--pink);border:1px solid rgba(255,45,155,.28)}
+.rs-title{font-family:var(--ff1);font-size:15px;font-weight:700;letter-spacing:.5px}
+.rs-body{font-size:13px;color:var(--off);line-height:1.7}
+.rs-body strong{color:var(--white)}
+
+/* Winners podium */
+.podium-row{
+  display:flex;align-items:flex-end;justify-content:center;
+  gap:12px;margin-top:18px;
+}
+.pod{
+  display:flex;flex-direction:column;align-items:center;
+  border-radius:12px 12px 0 0;padding:16px 18px 12px;
+  transition:transform .3s;
+  cursor:default;
+}
+.pod:hover{transform:translateY(-8px)}
+.pod-icon{font-size:32px;margin-bottom:8px;display:block}
+.pod-rank{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.pod-prize{font-size:12px;font-weight:700}
+
+.pod-1{
+  background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.28);
+  height:130px;justify-content:flex-end;
+}
+.pod-1 .pod-rank,.pod-1 .pod-prize{color:var(--gold)}
+
+.pod-2{
+  background:rgba(192,192,192,.08);border:1px solid rgba(192,192,192,.2);
+  height:100px;justify-content:flex-end;
+}
+.pod-2 .pod-rank,.pod-2 .pod-prize{color:#C0C0C0}
+
+.pod-3{
+  background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.2);
+  height:80px;justify-content:flex-end;
+}
+.pod-3 .pod-rank,.pod-3 .pod-prize{color:#CD7F32}
+
+/* ══════════════════════════════════════════
+   SUMMARY FLOW (visual overview)
+══════════════════════════════════════════ */
+#summary{
+  padding:90px 20px;
+  background:linear-gradient(to bottom,var(--bg2),var(--bg));
+}
+
+.flow-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;max-width:1080px;margin:0 auto;
+  position:relative;
+}
+@media(max-width:750px){
+  .flow-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .flow-connector{display:none}
+}
+
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:30px 16px;position:relative;
+}
+/* Connector between steps */
+.flow-step:not(:last-child)::after{
+  content:'›';
+  position:absolute;right:-14px;top:42px;
+  font-size:30px;color:rgba(255,215,0,.35);
+  font-weight:100;z-index:2;
+}
+@media(max-width:750px){.flow-step::after{display:none}}
+
+.fs-bubble{
+  width:72px;height:72px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:14px;position:relative;
+  transition:transform .3s;
+}
+.flow-step:hover .fs-bubble{transform:scale(1.15) rotate(-5deg)}
+
+.fs-b1{background:rgba(255,215,0,.1);border:2px solid rgba(255,215,0,.3)}
+.fs-b2{background:rgba(0,245,255,.08);border:2px solid rgba(0,245,255,.25)}
+.fs-b3{background:rgba(139,47,201,.1);border:2px solid rgba(139,47,201,.3)}
+.fs-b4{background:rgba(255,45,155,.1);border:2px solid rgba(255,45,155,.3)}
+
+.fs-title{
+  font-family:var(--ff1);font-size:12px;font-weight:700;
+  letter-spacing:.5px;margin-bottom:8px;color:var(--white);
+}
+.fs-desc{font-size:12px;color:var(--off);line-height:1.6}
+
+/* Glow orb on the number badge */
+.fs-badge{
+  position:absolute;top:-6px;right:-6px;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;font-family:var(--ff2);
+}
+.fs-b1 + .fs-badge,.fs-badge.g{background:var(--gold);color:#000}
+.fs-badge.c{background:var(--cyan);color:#000}
+.fs-badge.p{background:var(--purple);color:#fff}
+.fs-badge.pk{background:var(--pink);color:#fff}
+
+/* ══════════════════════════════════════════
+   CTA SECTION
+══════════════════════════════════════════ */
+#cta{
+  padding:100px 20px;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+#cta::before{
+  content:'';position:absolute;
+  width:700px;height:700px;
+  background:radial-gradient(circle,rgba(255,45,155,.08) 0%,transparent 65%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+#cta::after{
+  content:'';position:absolute;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(255,215,0,.06) 0%,transparent 65%);
+  top:40%;left:55%;transform:translate(-50%,-50%);
+}
+.cta-inner{position:relative;z-index:1}
+
+.cta-title{
+  font-family:var(--ff1);
+  font-size:clamp(24px,5vw,58px);
+  font-weight:900;line-height:1.1;
+  margin-bottom:16px;
+}
+.cta-title .t-gold{color:var(--gold);text-shadow:var(--glowGold)}
+.cta-sub{
+  color:var(--off);font-size:16px;
+  max-width:520px;margin:0 auto 40px;line-height:1.7;
+}
+
+.cta-buttons{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.btn-primary{
+  background:var(--gGold);border:none;border-radius:50px;
+  padding:16px 42px;font-family:var(--ff2);font-weight:700;
+  font-size:14px;letter-spacing:2px;text-transform:uppercase;color:#000;
+  cursor:none;transition:transform .2s,box-shadow .2s;
+}
+.btn-primary:hover{transform:translateY(-3px) scale(1.05);box-shadow:var(--glowGold)}
+.btn-secondary{
+  background:transparent;
+  border:1.5px solid rgba(255,215,0,.35);
+  border-radius:50px;padding:16px 42px;
+  font-family:var(--ff2);font-weight:700;font-size:14px;
+  letter-spacing:2px;text-transform:uppercase;color:var(--gold);
+  cursor:none;transition:transform .2s,box-shadow .2s,background .2s;
+}
+.btn-secondary:hover{
+  background:rgba(255,215,0,.08);
+  transform:translateY(-3px);
+  box-shadow:var(--glowGold);
+}
+
+/* Platform follow strip below CTA */
+.follow-strip{
+  display:flex;justify-content:center;gap:20px;
+  margin-top:48px;flex-wrap:wrap;
+}
+.follow-btn{
+  display:flex;align-items:center;gap:9px;
+  border-radius:50px;padding:11px 24px;
+  font-size:13px;font-weight:700;
+  cursor:none;transition:transform .2s,box-shadow .2s;
+  text-decoration:none;color:#fff;
+}
+.follow-btn:hover{transform:translateY(-4px)}
+.fb-yt{background:rgba(255,0,0,.18);border:1px solid rgba(255,0,0,.4)}
+.fb-yt:hover{box-shadow:0 0 22px rgba(255,0,0,.45)}
+.fb-fb{background:rgba(24,119,242,.18);border:1px solid rgba(24,119,242,.4)}
+.fb-fb:hover{box-shadow:0 0 22px rgba(24,119,242,.45)}
+.fb-ig{background:rgba(225,48,108,.18);border:1px solid rgba(225,48,108,.4)}
+.fb-ig:hover{box-shadow:0 0 22px rgba(225,48,108,.45)}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer{
+  padding:32px 40px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:14px;
+  background:var(--bg);
+  position:relative;z-index:1;
+}
+.foot-brand{font-family:var(--ff1);font-size:15px;font-weight:900}
+.foot-brand span{color:var(--gold)}
+.foot-note{font-size:11px;color:var(--off);letter-spacing:.5px}
+
+/* ══════════════════════════════════════════
+   FLOATING QUIZ BUBBLE (hero decoration)
+══════════════════════════════════════════ */
+.quiz-bubble{
+  position:absolute;
+  background:rgba(16,16,36,.92);
+  border:1px solid rgba(255,215,0,.28);
+  border-radius:18px;padding:14px 18px;
+  box-shadow:0 8px 36px rgba(0,0,0,.5),0 0 22px rgba(255,215,0,.1);
+  animation:bubbleFloat 5s ease-in-out infinite;
+  pointer-events:none;max-width:220px;
+}
+.qb-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.qb-q{font-size:12px;font-weight:700;line-height:1.45;color:var(--white)}
+.qb-time{font-size:10px;color:var(--off);margin-top:6px;display:flex;align-items:center;gap:5px}
+.qb-time::before{content:'🕖'}
+
+.quiz-bubble.b1{top:18%;right:8%;animation-delay:0s}
+.quiz-bubble.b2{top:55%;right:5%;animation-delay:2.2s;opacity:.7}
+.quiz-bubble.b3{top:30%;left:4%;animation-delay:1.1s;opacity:.6}
+@keyframes bubbleFloat{
+  0%,100%{transform:translateY(0) rotate(-1deg)}
+  50%{transform:translateY(-14px) rotate(1deg)}
+}
+@media(max-width:900px){.quiz-bubble{display:none}}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE TWEAKS
+══════════════════════════════════════════ */
+@media(max-width:800px){
+  .draw-layout,.draw-layout.flip{direction:ltr}
+  .week-track{gap:8px}
+  .day-node{min-width:90px}
+  .day-node::after{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Particle field -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
+<nav>
+  <div class="nav-logo">WIN<span>BOX7</span></div>
+  <div class="nav-links">
+    <a href="#schedule">Schedule</a>
+    <a href="#loyalty">Loyalty Draw</a>
+    <a href="#grand">Grand Draw</a>
+    <a href="#cta">Join Now</a>
+  </div>
+  <a href="landing.html"><button class="nav-cta">🎰 Launch Draw</button></a>
+</nav>
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<section id="hero">
+  <div class="hero-ring hero-ring-1"></div>
+  <div class="hero-ring hero-ring-2"></div>
+
+  <!-- Floating quiz bubbles -->
+  <div class="quiz-bubble b1">
+    <div class="qb-label">Today's Quiz</div>
+    <div class="qb-q">What is the capital of the tallest mountain in the world?</div>
+    <div class="qb-time">7:00 PM Daily</div>
+  </div>
+  <div class="quiz-bubble b2">
+    <div class="qb-label">Quick!</div>
+    <div class="qb-q">Answer within 10 mins for Loyalty Draw 🏅</div>
+    <div class="qb-time">Live on all platforms</div>
+  </div>
+  <div class="quiz-bubble b3">
+    <div class="qb-label">Winners Announced</div>
+    <div class="qb-q">Every Sunday — 9 total winners 🎉</div>
+    <div class="qb-time">Every Sunday</div>
+  </div>
+
+  <div class="hero-badge">Live Quiz Every Day at 7 PM</div>
+
+  <h1 class="hero-title">
+    <span class="t-white">WINBOX</span><span class="t-gold">7</span><br/>
+    <span class="t-shine">Quiz Lucky Draw</span>
+  </h1>
+
+  <p class="hero-sub">
+    Answer daily quiz questions on YouTube, Facebook &amp; Instagram.
+    Win cash prizes every week through our Loyalty Draw and Grand Lucky Draw — open to everyone!
+  </p>
+
+  <div class="hero-platforms">
+    <a href="https://www.youtube.com/channel/UC0n4vQJNp3UZ5omjGtwM-aw" target="_blank"><div class="plat-chip yt"><span class="dot"></span>YouTube</div></a>
+    <a href="https://www.facebook.com/WinBoxSeven/" target="_blank"><div class="plat-chip fb"><span class="dot"></span>Facebook</div></a>
+    <a href="https://www.instagram.com/winbox7official/" target="_blank"><div class="plat-chip ig"><span class="dot"></span>Instagram</div></a>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-bar"></div>
+    SCROLL
+  </div>
+</section>
+
+<!-- ═══════════════════════ SCHEDULE ═══════════════════════ -->
+<section id="schedule">
+  <div class="sec-eyebrow reveal">Weekly Schedule</div>
+  <h2 class="sec-title reveal">Quiz Posted <span style="color:var(--gold)">Every Day</span> at 7 PM</h2>
+  <p class="sec-desc reveal">
+    From Monday to Saturday we post one quiz question. Answer correctly to enter the draws.
+    Winners are announced every Sunday. 🏆
+  </p>
+
+  <div class="week-track reveal">
+
+    <!-- Mon–Sat -->
+    <div class="day-node">
+      <div class="day-icon">M<div class="day-pulse"></div></div>
+      <div class="day-label">Monday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <div class="day-node">
+      <div class="day-icon">T<div class="day-pulse"></div></div>
+      <div class="day-label">Tuesday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <div class="day-node">
+      <div class="day-icon">W<div class="day-pulse"></div></div>
+      <div class="day-label">Wednesday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <div class="day-node">
+      <div class="day-icon">T<div class="day-pulse"></div></div>
+      <div class="day-label">Thursday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <div class="day-node">
+      <div class="day-icon">F<div class="day-pulse"></div></div>
+      <div class="day-label">Friday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <div class="day-node">
+      <div class="day-icon">S<div class="day-pulse"></div></div>
+      <div class="day-label">Saturday</div>
+      <div class="day-time">7:00 PM</div>
+      <div class="day-tag tag-quiz">Quiz Live</div>
+    </div>
+    <!-- Sunday -->
+    <div class="day-node is-sunday">
+      <div class="day-icon">🏆<div class="day-pulse"></div></div>
+      <div class="day-label">Sunday</div>
+      <div class="day-time">Winners!</div>
+      <div class="day-tag tag-win">Announced</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ HOW IT WORKS ═══════════════════════ -->
+<section id="how">
+  <div class="sec-eyebrow reveal">How It Works</div>
+  <h2 class="sec-title reveal">Two Ways to <span style="color:var(--gold)">Win</span></h2>
+  <p class="sec-desc reveal">Every correct answer gives you two chances at prizes. Here's what you need to know.</p>
+
+  <div class="how-intro-grid">
+    <div class="info-card reveal" style="transition-delay:.0s">
+      <span class="ic-icon">📝</span>
+      <div class="ic-title">Answer the Quiz</div>
+      <div class="ic-body">One question posted every day Mon–Sat at 7 PM. Leave your answer in the comments on YouTube, Facebook, or Instagram.</div>
+    </div>
+    <div class="info-card reveal" style="transition-delay:.12s">
+      <span class="ic-icon">⚡</span>
+      <div class="ic-title">Speed Matters</div>
+      <div class="ic-body">Reply within the first <strong style="color:var(--white)">10 minutes</strong> for a chance in the Loyalty Draw. Subscribers &amp; followers get priority entry.</div>
+    </div>
+    <div class="info-card reveal" style="transition-delay:.24s">
+      <span class="ic-icon">🎰</span>
+      <div class="ic-title">Two Draws, 9 Winners</div>
+      <div class="ic-body">6 Loyalty winners (one per day) + 3 Grand Lucky Draw winners — selected live every Sunday!</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ LOYALTY DRAW ═══════════════════════ -->
+<section id="loyalty">
+  <div class="draw-layout">
+
+    <!-- Visual -->
+    <div class="draw-visual reveal">
+      <div class="loyalty-stack">
+        <div class="lw-card"><div class="lw-day">Monday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 1</div></div>
+        <div class="lw-card"><div class="lw-day">Tuesday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 2</div></div>
+        <div class="lw-card"><div class="lw-day">Wednesday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 3</div></div>
+        <div class="lw-card"><div class="lw-day">Thursday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 4</div></div>
+        <div class="lw-card"><div class="lw-day">Friday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 5</div></div>
+        <div class="lw-card"><div class="lw-day">Saturday</div><div class="lw-crown">👑</div><div class="lw-name">Winner 6</div></div>
+      </div>
+    </div>
+
+    <!-- Copy -->
+    <div class="draw-copy reveal" style="transition-delay:.15s">
+      <div class="draw-num">01</div>
+      <div class="draw-subtitle">First Draw</div>
+      <h3 class="draw-heading">Loyalty User<br/><span style="color:var(--gold)">Quiz Lucky Draw</span></h3>
+
+      <ul class="rule-list">
+        <li>
+          <div class="rule-icon">⚡</div>
+          <div>Answer within the <strong>first 10 minutes</strong> of the quiz post going live at 7:00 PM.</div>
+        </li>
+        <li>
+          <div class="rule-icon">✅</div>
+          <div>Your answer must be <strong>correct</strong> to qualify for entry.</div>
+        </li>
+        <li>
+          <div class="rule-icon">🔔</div>
+          <div>You must be a <strong>subscriber or follower</strong> of the channel/page.</div>
+        </li>
+        <li>
+          <div class="rule-icon">🗓️</div>
+          <div><strong>One winner selected per day</strong> from Monday to Saturday — 6 total.</div>
+        </li>
+      </ul>
+
+      <div class="prize-banner">
+        <span>🎁</span> 6 Lucky Winners Each Week
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- DIVIDER TICKER -->
+<div class="divider-band">
+  <div class="ticker-inner">
+    <div class="ticker-item">Grand Lucky Draw</div>
+    <div class="ticker-item">Semifinal Round</div>
+    <div class="ticker-item">Final Spin Wheel</div>
+    <div class="ticker-item">3 Grand Winners</div>
+    <div class="ticker-item">Rank 1 · Rank 2 · Rank 3</div>
+    <div class="ticker-item">Grand Lucky Draw</div>
+    <div class="ticker-item">Semifinal Round</div>
+    <div class="ticker-item">Final Spin Wheel</div>
+    <div class="ticker-item">3 Grand Winners</div>
+    <div class="ticker-item">Rank 1 · Rank 2 · Rank 3</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ GRAND DRAW ═══════════════════════ -->
+<section id="grand">
+  <div class="draw-layout flip">
+
+    <!-- Copy -->
+    <div class="draw-copy reveal">
+      <div class="draw-num" style="background:var(--gPink);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">02</div>
+      <div class="draw-subtitle" style="color:var(--pink)">Second Draw</div>
+      <h3 class="draw-heading">Grand <span style="color:var(--pink)">Lucky Draw</span></h3>
+
+      <div class="round-steps">
+
+        <div class="round-step reveal" style="transition-delay:.1s">
+          <div class="rs-header">
+            <div class="rs-num gold">S</div>
+            <div class="rs-title" style="color:var(--gold)">Semifinal Round</div>
+          </div>
+          <div class="rs-body">
+            We collect <strong>all users who answered correctly</strong> from Mon–Sat, regardless of time.
+            From each day's quiz, we randomly select <strong>20% of entries</strong> (minimum 1, maximum 10 users) to become semifinalists.
+          </div>
+        </div>
+
+        <div class="round-step reveal" style="transition-delay:.22s">
+          <div class="rs-header">
+            <div class="rs-num pink">F</div>
+            <div class="rs-title" style="color:var(--pink)">Final Round — Spin Wheel</div>
+          </div>
+          <div class="rs-body">
+            All semifinalists enter the <strong>live spinning wheel</strong>. Three winners are drawn in dramatic fashion — live on stream every Sunday.
+          </div>
+
+          <!-- Podium -->
+          <div class="podium-row">
+            <div class="pod pod-2">
+              <span class="pod-icon">🥈</span>
+              <div class="pod-rank">Rank 2</div>
+              <div class="pod-prize">2nd Prize</div>
+            </div>
+            <div class="pod pod-1">
+              <span class="pod-icon">🏆</span>
+              <div class="pod-rank">Rank 1</div>
+              <div class="pod-prize">Grand Prize</div>
+            </div>
+            <div class="pod pod-3">
+              <span class="pod-icon">🥉</span>
+              <div class="pod-rank">Rank 3</div>
+              <div class="pod-prize">3rd Prize</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Visual — funnel -->
+    <div class="draw-visual reveal" style="transition-delay:.2s">
+      <div class="grand-visual">
+        <div class="funnel-block fb-all">
+          <div class="fb-icon">👥</div>
+          <div class="fb-label">All Correct Answers</div>
+          <div class="fb-desc">Mon–Sat · Any time · All platforms</div>
+        </div>
+
+        <div class="funnel-arrow">▼</div>
+
+        <div class="funnel-block fb-semi">
+          <div class="fb-icon">⭐</div>
+          <div class="fb-label">Semifinalists</div>
+          <div class="fb-desc">20% per day · Max 10 · Random selection</div>
+        </div>
+
+        <div class="funnel-arrow">▼</div>
+
+        <div class="funnel-block fb-final">
+          <div class="fb-icon">🎡</div>
+          <div class="fb-label">Final Wheel Spin</div>
+          <div class="fb-desc">🏆 Rank 1 &nbsp; 🥈 Rank 2 &nbsp; 🥉 Rank 3</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ SUMMARY FLOW ═══════════════════════ -->
+<section id="summary">
+  <div class="sec-eyebrow reveal">Complete Journey</div>
+  <h2 class="sec-title reveal">Your Path to <span style="color:var(--gold)">Winning</span></h2>
+  <p class="sec-desc reveal">Every week follows the same exciting journey — from Monday quiz to Sunday winners.</p>
+
+  <div class="flow-grid">
+
+    <div class="flow-step reveal" style="transition-delay:.0s">
+      <div class="fs-bubble fs-b1">
+        📝
+        <div class="fs-badge g">1</div>
+      </div>
+      <div class="fs-title">Answer Daily</div>
+      <div class="fs-desc">Comment the correct answer on any platform Mon–Sat at 7 PM</div>
+    </div>
+
+    <div class="flow-step reveal" style="transition-delay:.12s">
+      <div class="fs-bubble fs-b2">
+        ⚡
+        <div class="fs-badge c">2</div>
+      </div>
+      <div class="fs-title">Be Early</div>
+      <div class="fs-desc">Reply within 10 mins + subscribe to qualify for Loyalty Draw</div>
+    </div>
+
+    <div class="flow-step reveal" style="transition-delay:.24s">
+      <div class="fs-bubble fs-b3">
+        🎰
+        <div class="fs-badge p">3</div>
+      </div>
+      <div class="fs-title">Semifinal Draw</div>
+      <div class="fs-desc">20% of correct answers randomly picked per day for Grand Draw</div>
+    </div>
+
+    <div class="flow-step reveal" style="transition-delay:.36s">
+      <div class="fs-bubble fs-b4">
+        🏆
+        <div class="fs-badge pk">4</div>
+      </div>
+      <div class="fs-title">Sunday Winners</div>
+      <div class="fs-desc">6 Loyalty + 3 Grand = 9 winners announced live every Sunday</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ CTA ═══════════════════════ -->
+<section id="cta">
+  <div class="cta-inner">
+    <h2 class="cta-title reveal">
+      Ready to <span class="t-gold">Win?</span><br/>
+      Join Today's Quiz!
+    </h2>
+    <p class="cta-sub reveal">
+      The next quiz drops at 7:00 PM. Subscribe, follow, and get ready — your lucky draw entry is just one correct answer away.
+    </p>
+
+    <div class="cta-buttons reveal">
+      <a href="landing.html"><button class="btn-primary">🎰 Launch Lucky Draw</button></a>
+      <button class="btn-secondary">How It Works ↓</button>
+    </div>
+
+    <div class="follow-strip reveal" style="transition-delay:.2s">
+      <a class="follow-btn fb-yt" href="https://www.youtube.com/channel/UC0n4vQJNp3UZ5omjGtwM-aw">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5a3 3 0 0 0-2.1 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+        Subscribe on YouTube
+      </a>
+      <a class="follow-btn fb-fb" href="https://www.facebook.com/WinBoxSeven/">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3v-2.6c0-3 1.8-4.6 4.5-4.6 1.3 0 2.7.2 2.7.2v2.9h-1.5c-1.5 0-1.9.9-1.9 1.8V12h3.3l-.5 3.5H14v8.4A12 12 0 0 0 24 12z"/></svg>
+        Follow on Facebook
+      </a>
+      <a class="follow-btn fb-ig" href="https://www.instagram.com/winbox7official/">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="url(#igGrad)"><defs><linearGradient id="igGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#FD5949"/><stop offset="100%" stop-color="#D6249F"/></linearGradient></defs><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8 0 3.2 0 3.6-.1 4.8-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.9.1-3.2 0-3.6 0-4.8-.1-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12c0-3.2 0-3.6.1-4.8C2.4 3.9 3.9 2.3 7.2 2.3 8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12c0 3.3 0 3.7.1 4.9.2 4.4 2.6 6.8 7 7C8.3 24 8.7 24 12 24c3.3 0 3.7 0 4.9-.1 4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9 0-3.3 0-3.7-.1-4.9C23.7 2.7 21.3.3 16.9.1 15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+        Follow on Instagram
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+  <div class="foot-brand">WIN<span>BOX7</span></div>
+  <div class="foot-note">© 2025 WinBox7 · Quiz Lucky Draw · All rights reserved</div>
+  <div class="foot-note">Mon – Sat · 7:00 PM · Winners Every Sunday</div>
+</footer>
+
+<!-- ═══════════════════════ JAVASCRIPT ═══════════════════════ -->
+<script>
+/* ── Custom cursor ── */
+const cur  = document.getElementById('cursor');
+const curR = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function trackCursor(){
+  cur.style.left  = mx+'px'; cur.style.top  = my+'px';
+  rx += (mx-rx)*.14; ry += (my-ry)*.14;
+  curR.style.left = rx+'px'; curR.style.top = ry+'px';
+  requestAnimationFrame(trackCursor);
+})();
+document.querySelectorAll('button,a,.lw-card,.pod,.flow-step,.info-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ curR.style.width='56px'; curR.style.height='56px'; curR.style.borderColor='rgba(255,215,0,.7)'; });
+  el.addEventListener('mouseleave',()=>{ curR.style.width='34px'; curR.style.height='34px'; curR.style.borderColor='rgba(255,215,0,.45)'; });
+});
+
+/* ── Particle field ── */
+(function initParticles(){
+  const canvas = document.getElementById('particle-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W,H,particles=[];
+
+  function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+
+  const COLORS=['rgba(255,215,0,','rgba(255,45,155,','rgba(0,245,255,','rgba(139,47,201,'];
+
+  class Particle{
+    constructor(){this.reset(true)}
+    reset(init=false){
+      this.x  = Math.random()*W;
+      this.y  = init ? Math.random()*H : H+10;
+      this.vx = (Math.random()-.5)*.3;
+      this.vy = -(Math.random()*.4+.1);
+      this.r  = Math.random()*2+.5;
+      this.alpha=0;
+      this.maxAlpha=Math.random()*.4+.1;
+      this.col=COLORS[Math.floor(Math.random()*COLORS.length)];
+      this.life=0; this.maxLife=Math.random()*300+200;
+    }
+    update(){
+      this.x+=this.vx; this.y+=this.vy; this.life++;
+      const t=this.life/this.maxLife;
+      this.alpha = t<.2 ? (t/.2)*this.maxAlpha : t>.8 ? ((1-t)/.2)*this.maxAlpha : this.maxAlpha;
+      if(this.life>=this.maxLife) this.reset();
+    }
+    draw(){
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+      ctx.fillStyle=this.col+this.alpha+')';
+      ctx.fill();
+    }
+  }
+
+  for(let i=0;i<120;i++) particles.push(new Particle());
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{ p.update(); p.draw(); });
+
+    /* Draw faint connecting lines between nearby particles */
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x;
+        const dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<80){
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle=`rgba(255,215,0,${.06*(1-d/80)})`;
+          ctx.lineWidth=.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ── Scroll reveal (IntersectionObserver) ── */
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('visible'); }
+  });
+},{threshold:0.12});
+revealEls.forEach(el=>io.observe(el));
+
+/* ── Navbar shrink on scroll ── */
+const nav = document.querySelector('nav');
+window.addEventListener('scroll',()=>{
+  if(scrollY>60){ nav.style.height='52px'; nav.style.backdropFilter='blur(24px)'; }
+  else          { nav.style.height='66px'; nav.style.backdropFilter='blur(18px)'; }
+});
+
+/* ── Animated number counter in hero badge ── */
+(function animateCountUp(){
+  const els = document.querySelectorAll('[data-count]');
+  const ioC = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const target=+e.target.dataset.count;
+      let current=0;
+      const step=Math.ceil(target/60);
+      const t=setInterval(()=>{
+        current=Math.min(current+step,target);
+        e.target.textContent=current;
+        if(current>=target) clearInterval(t);
+      },25);
+      ioC.unobserve(e.target);
+    });
+  });
+  els.forEach(el=>ioC.observe(el));
+})();
+
+/* ── Stagger loyalty cards on enter ── */
+const lwCards = document.querySelectorAll('.lw-card');
+const ioLW = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      lwCards.forEach((c,i)=>{
+        c.style.opacity='0'; c.style.transform='scale(.7)';
+        c.style.transition=`opacity .4s ease ${i*.08}s, transform .5s cubic-bezier(.175,.885,.32,1.275) ${i*.08}s`;
+        setTimeout(()=>{ c.style.opacity='1'; c.style.transform=''; },50);
+      });
+      ioLW.disconnect();
+    }
+  });
+},{threshold:.2});
+if(lwCards.length) ioLW.observe(lwCards[0].closest('section')||lwCards[0]);
+
+/* ── Funnel blocks staggered entry ── */
+const funnelBlocks = document.querySelectorAll('.funnel-block,.funnel-arrow');
+funnelBlocks.forEach((el,i)=>{ el.style.opacity='0'; el.style.transform='translateY(20px)'; });
+const ioFunnel = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      funnelBlocks.forEach((el,i)=>{
+        setTimeout(()=>{
+          el.style.transition='opacity .5s ease, transform .5s ease';
+          el.style.opacity='1'; el.style.transform='';
+        },i*160);
+      });
+      ioFunnel.disconnect();
+    }
+  });
+},{threshold:.2});
+if(funnelBlocks.length) ioFunnel.observe(funnelBlocks[0].closest('.grand-visual')||funnelBlocks[0]);
+
+/* ── Live countdown to next 7 PM ── */
+(function liveCountdown(){
+  const badge = document.querySelector('.hero-badge');
+  if(!badge) return;
+  function getNext7PM(){
+    const now=new Date();
+    const target=new Date(now);
+    target.setHours(19,0,0,0);
+    if(now>=target) target.setDate(target.getDate()+1);
+    /* Skip Sunday */
+    if(target.getDay()===0) target.setDate(target.getDate()+1);
+    return target;
+  }
+  function fmt(s){ const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60; return `${h}h ${m}m ${sc}s`; }
+  function tick(){
+    const diff=Math.max(0,Math.floor((getNext7PM()-Date.now())/1000));
+    badge.innerHTML = `<span style="width:7px;height:7px;background:var(--gold);border-radius:50%;box-shadow:var(--glowGold);animation:blink 1.4s ease-in-out infinite;flex-shrink:0"></span> Next Quiz in ${fmt(diff)}`;
+  }
+  tick(); setInterval(tick,1000);
+})();
+</script>
+</body>
+</html>

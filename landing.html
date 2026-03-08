@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WinBox7 Lucky Draw</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Fonts: Orbitron (display) + Rajdhani (body) -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- SheetJS — Excel read/write -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- GSAP — animation library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- canvas-confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════
+       PERSISTENT HEADER
+  ══════════════════════════════════════════════════ -->
+  <header id="main-header">
+    <div class="header-bar-glow"></div>
+    <div class="header-brand">
+      <span class="crown">👑</span>
+      <div>
+        <div class="brand-name">WINBOX<span class="brand-7">7</span></div>
+        <div class="brand-sub">LUCKY DRAW</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" title="Back to Home" style="text-decoration:none">
+        <button class="hbtn" style="font-size:13px;width:auto;padding:0 12px;letter-spacing:1px;font-family:'Rajdhani',sans-serif;font-weight:700">← Home</button>
+      </a>
+      <button id="btn-sound"      class="hbtn" title="Toggle sound">🔊</button>
+      <button id="btn-fullscreen" class="hbtn" title="Fullscreen">⛶</button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 1 — ADMIN UPLOAD
+  ══════════════════════════════════════════════════ -->
+  <section id="screen-admin" class="screen active">
+    <div class="admin-wrap">
+      <div class="admin-card">
+
+        <h2 class="section-title">Upload Participant Files</h2>
+        <p class="section-desc">Add one or more Day + Source + Excel combinations, then hit Submit.</p>
+
+        <div id="rows-container">
+          <!-- Upload rows injected by JS -->
+        </div>
+
+        <div class="admin-footer">
+          <button id="btn-add-row" class="btn-sec">＋ Add Row</button>
+          <button id="btn-submit"  class="btn-pri">▶ Submit &amp; Start Draw</button>
+        </div>
+
+        <div id="upload-error" class="error-box hidden"></div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 2 — LIVE DRAW ANIMATION
+  ══════════════════════════════════════════════════ -->
+  <section id="screen-draw" class="screen hidden">
+
+    <!-- Progress strip -->
+    <div class="prog-strip">
+      <span class="prog-label">Draw Progress</span>
+      <div class="prog-track"><div id="prog-fill" class="prog-fill"></div></div>
+      <span id="prog-text" class="prog-label">0 / 0</span>
+    </div>
+
+    <div class="draw-layout">
+
+      <!-- LEFT — scrolling name pool -->
+      <div class="panel panel-left">
+        <div class="panel-hd">
+          <span>🎰 Participants Pool</span>
+          <span id="total-count" class="badge">0</span>
+        </div>
+        <div class="scroll-viewport">
+          <div id="scroll-names" class="scroll-names"></div>
+        </div>
+      </div>
+
+      <!-- CENTRE — controls -->
+      <div class="panel-mid">
+        <button id="btn-start-draw"  class="btn-draw">
+          <span class="di">▶</span>
+          <span class="dl">Start</span>
+        </button>
+        <button id="btn-pause-draw"  class="btn-pause hidden">
+          <span class="di">⏸</span>
+          <span class="dl">Pause</span>
+        </button>
+        <div id="draw-status" class="draw-status">Ready</div>
+      </div>
+
+      <!-- RIGHT — selected semifinalists -->
+      <div class="panel panel-right">
+        <div class="panel-hd">
+          <span>⭐ Semifinalists</span>
+          <span id="sel-count" class="badge">0</span>
+        </div>
+        <div id="sel-container" class="sel-container"></div>
+      </div>
+
+    </div>
+
+    <!-- Flying name (absolutely positioned overlay) -->
+    <div id="fly-el" class="fly-el hidden"></div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 3 — SEMIFINAL GRID
+  ══════════════════════════════════════════════════ -->
+  <section id="screen-semi" class="screen hidden">
+    <div class="semi-wrap">
+
+      <div class="semi-hd">
+        <div class="trophy-big">🏆</div>
+        <h2 class="semi-title">Semifinal Selection Completed!</h2>
+        <p id="semi-desc" class="semi-desc">All semifinalists have been selected</p>
+      </div>
+
+      <div id="semi-grid" class="semi-grid"></div>
+
+      <div class="semi-actions">
+        <button id="btn-start-final"  class="btn-pri btn-xl">🎡 Start Final Lucky Draw</button>
+        <button id="btn-export-semi"  class="btn-sec">📥 Export Semifinalists</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 4 — SPINNING WHEEL
+  ══════════════════════════════════════════════════ -->
+  <section id="screen-wheel" class="screen hidden">
+    <div class="wheel-layout">
+
+      <!-- Wheel area -->
+      <div class="wheel-area">
+        <div class="wheel-wrap">
+          <div class="wheel-pointer">▼</div>
+          <canvas id="wheel-canvas" width="500" height="500"></canvas>
+          <div class="wheel-hub">🎯</div>
+        </div>
+        <div id="rank-label" class="rank-label">🏆 Drawing for <span id="rank-span">Rank 1</span></div>
+        <button id="btn-spin" class="btn-spin">SPIN THE WHEEL!</button>
+      </div>
+
+      <!-- Winners sidebar -->
+      <div class="winners-panel">
+        <h3 class="winners-panel-title">🏆 Winners</h3>
+        <div id="winners-list" class="winners-list"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 5 — CELEBRATION
+  ══════════════════════════════════════════════════ -->
+  <section id="screen-celebrate" class="screen hidden">
+    <div class="celebrate-wrap">
+
+      <div class="celebrate-hd">
+        <h2 class="celebrate-title">🎉 CONGRATULATIONS! 🎉</h2>
+        <p class="celebrate-sub">WinBox7 Lucky Draw — Official Winners</p>
+      </div>
+
+      <div id="final-display" class="final-display"></div>
+
+      <div class="celebrate-actions">
+        <button id="btn-export-winners" class="btn-pri btn-xl">📥 Export Winners</button>
+        <button id="btn-restart"        class="btn-sec">🔄 New Draw</button>
+      </div>
+
+    </div>
+    <!-- Confetti canvas sits behind content -->
+    <canvas id="confetti-canvas" style="
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      pointer-events:none;z-index:999;
+    "></canvas>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>

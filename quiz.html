@@ -98,6 +98,15 @@ textarea{resize:vertical;min-height:60px;line-height:1.5;}
 }
 .thm-btn:hover,.thm-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
 
+/* Text style buttons */
+.style-btn{
+  width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;
+  background:#fff;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.8rem;
+  display:grid;place-items:center;transition:all .15s;color:var(--ink);
+}
+.style-btn:hover{border-color:var(--gold);background:rgba(245,166,35,.07);}
+.style-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
 hr{border:none;border-top:1px dashed var(--border);margin:14px 0;}
 
 /* Buttons */
@@ -276,6 +285,34 @@ hr{border:none;border-top:1px dashed var(--border);margin:14px 0;}
       <textarea id="question" rows="3">भारत की राजधानी क्या है?</textarea>
     </div>
     <div class="field">
+      <label>Question Font Size</label>
+      <div style="display:flex;align-items:center;gap:9px;">
+        <input type="range" id="qFontSize" min="10" max="28" value="13"
+          style="flex:1;accent-color:var(--gold);height:4px;cursor:pointer;"
+          oninput="document.getElementById('qFontSizeVal').textContent=this.value+'px';generatePreview()">
+        <span id="qFontSizeVal" style="font-size:.72rem;color:var(--gray);min-width:30px;text-align:right;">13px</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Text Styling</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;">
+        <button id="styleB" class="style-btn" onclick="toggleStyle('bold',this)" title="Bold">
+          <b>B</b>
+        </button>
+        <button id="styleI" class="style-btn" onclick="toggleStyle('italic',this)" title="Italic">
+          <i>I</i>
+        </button>
+        <button id="styleU" class="style-btn" onclick="toggleStyle('underline',this)" title="Underline">
+          <u>U</u>
+        </button>
+        <span style="margin-left:4px;font-size:.68rem;color:var(--gray);align-self:center;">Color:</span>
+        <input type="color" id="qColor" value="#0D0D0D"
+          style="width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;padding:1px;background:#fff;"
+          oninput="applyTextColor(this.value)">
+        <button class="style-btn" onclick="resetStyles()" title="Reset" style="font-size:.6rem;padding:0 7px;">✕ Reset</button>
+      </div>
+    </div>
+    <div class="field">
       <label>Question Image (optional)</label>
       <div class="img-drop" id="imgDrop">
         <input type="file" id="qImgFile" accept="image/*" onchange="onImageUpload(event)">
@@ -414,7 +451,7 @@ hr{border:none;border-top:1px dashed var(--border);margin:14px 0;}
     </div>
   </div>
 
-  <span class="prev-tag" style="font-size:.55rem;">🎬 Click "Download Video" · Saves as WebM (play in Chrome/VLC)</span>
+  <span class="prev-tag" style="font-size:.55rem;">🎬 Click "Download Video" · Saves as MP4</span>
 </main>
 </div>
 
@@ -441,6 +478,7 @@ let timers = [];
 let recording = false;
 let doCancel = false;
 let mr = null;
+let qStyles = { bold: false, italic: false, underline: false, color: '#0D0D0D' };
 
 // ══════════════════════════════════════════════════════
 //  THEMES
@@ -458,6 +496,39 @@ function setTheme(n, btn) {
   btn.classList.add('active');
 }
 
+// ── TEXT STYLE CONTROLS ──
+function toggleStyle(type, btn) {
+  qStyles[type] = !qStyles[type];
+  btn.classList.toggle('active', qStyles[type]);
+  applyPreviewStyles();
+  generatePreview();
+}
+
+function applyTextColor(val) {
+  qStyles.color = val;
+  applyPreviewStyles();
+  generatePreview();
+}
+
+function resetStyles() {
+  qStyles = { bold: false, italic: false, underline: false, color: '#0D0D0D' };
+  ['styleB','styleI','styleU'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('qColor').value = '#0D0D0D';
+  applyPreviewStyles();
+  generatePreview();
+}
+
+function applyPreviewStyles() {
+  const el = document.getElementById('rQ');
+  el.style.fontWeight = qStyles.bold ? '900' : '800';
+  el.style.fontStyle  = qStyles.italic ? 'italic' : 'normal';
+  el.style.textDecoration = qStyles.underline ? 'underline' : 'none';
+  el.style.color = qStyles.color;
+  // Font size from slider
+  const fs = document.getElementById('qFontSize').value;
+  el.style.fontSize = fs + 'px';
+}
+
 // ══════════════════════════════════════════════════════
 //  FORM DATA
 // ══════════════════════════════════════════════════════
@@ -467,6 +538,7 @@ function getData() {
   const ch = gv('channelName') || 'Lucky Draw Quiz';
   const pz = gv('prizeText') || '₹500 Cash Prize';
   const tk = gv('tickerText') || `⭐ ${ch.toUpperCase()} ⭐ COMMENT ANSWER ⭐ WIN ${pz.toUpperCase()} ⭐ SUBSCRIBE NOW ⭐ `;
+  const qFS_preview = parseInt(document.getElementById('qFontSize').value) || 13;
   return {
     channel: ch,
     qLabel:  gv('qLabel') || 'Question of the Day',
@@ -481,6 +553,8 @@ function getData() {
     sub:   gv('subText') || '🔔 Please Subscribe',
     ticker: tk,
     theme, imgDataUrl, imgEl,
+    qStyles: { ...qStyles },
+    qFontSizePreview: qFS_preview,
   };
 }
 
@@ -563,6 +637,9 @@ function generatePreview() {
 
   // Option D toggle
   document.getElementById('rOD').style.display = d.showD ? 'flex' : 'none';
+
+  // Apply text styles to preview
+  applyPreviewStyles();
 
   // Image
   const rImg = document.getElementById('rImg');
@@ -704,11 +781,15 @@ function drawFrame(ctx, d, t) {
   const footStart = d.showD ? 10400 : 8400;
   const confStart = footStart + 400;
 
+  // Scale preview font size (10-28px) → canvas font size (45-90px)
+  const baseFontScale = d.qFontSizePreview ? ((d.qFontSizePreview - 10) / 18) : 0.5;
+  const qFS_base = hasImg ? 55 : 68;
+  const qFS  = Math.round(qFS_base * (0.65 + baseFontScale * 0.7));
+
   // ── LAYOUT ──
   const topY    = 90;
   const qlY     = topY + 96;
   const qY      = qlY + 58;
-  const qFS     = hasImg ? 60 : 68;
   const qLH     = qFS * 1.35;
   const qMaxL   = hasImg ? 2 : 3;
   const imgTop  = hasImg ? qY + qMaxL*qLH + 32 : 0;
@@ -766,9 +847,18 @@ function drawFrame(ctx, d, t) {
   const qP = easeOut(clamp01((t-900)/600));
   if(qP>0){
     ctx.save();ctx.globalAlpha=qP;ctx.translate(0,(1-qP)*28);
-    ctx.font=`800 ${qFS}px 'Syne',sans-serif`;
-    ctx.fillStyle='#0D0D0D';
-    wrapText(ctx,d.q,PAD,qY,CW-PAD*2,qLH,qMaxL);
+    const qWeight = (d.qStyles && d.qStyles.bold) ? '900' : '800';
+    const qItalic = (d.qStyles && d.qStyles.italic) ? 'italic ' : '';
+    ctx.font=`${qItalic}${qWeight} ${qFS}px 'Syne',sans-serif`;
+    ctx.fillStyle = (d.qStyles && d.qStyles.color) ? d.qStyles.color : '#0D0D0D';
+    const qUsedH = wrapText(ctx,d.q,PAD,qY,CW-PAD*2,qLH,qMaxL);
+    // Underline simulation
+    if(d.qStyles && d.qStyles.underline){
+      const lines = d.q.split(' ');
+      // draw underline under the whole text block
+      ctx.fillStyle = (d.qStyles.color) ? d.qStyles.color : '#0D0D0D';
+      ctx.fillRect(PAD, qY + qUsedH + 6, CW-PAD*2, 5);
+    }
     ctx.restore();
   }
 
@@ -923,8 +1013,8 @@ async function startDownload(){
   // Init confetti
   initCParts();
 
-  // Pick mimeType
-  const types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
+  // Pick mimeType – prefer mp4, fall back to webm
+  const types=['video/mp4;codecs=h264','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
   const mimeType=types.find(m=>MediaRecorder.isTypeSupported(m))||'video/webm';
 
   let stream;
@@ -940,8 +1030,7 @@ async function startDownload(){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
-    const ext=mimeType.includes('mp4')?'mp4':'webm';
-    a.download=`quiz-reel-${Date.now()}.${ext}`;
+    a.download=`quiz-reel-${Date.now()}.mp4`;
     a.click();
     setTimeout(()=>URL.revokeObjectURL(url),3000);
     recording=false;
